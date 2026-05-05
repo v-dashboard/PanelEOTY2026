@@ -547,7 +547,7 @@
                 <div style="flex:2">
                     <h3>👥 PESERTA FINALIS</h3>
                     <input type="text" id="pesertaName" placeholder="Nama Peserta / Finalis">
-                    <input type="text" id="judulConim" placeholder="Judul Improvement / Presentasi" style="margin-top:0.5rem;">
+                    <input type="text" id="judulConim" placeholder="Departemen" style="margin-top:0.5rem;">
                     <input type="url" id="linkppt" placeholder="Link PPT / Materi Presentasi (Google Drive / YouTube)" style="margin-top:0.5rem;">
                     <button class="btn-primary" id="addPesertaBtn" style="margin-top:0.5rem">+ TAMBAH PESERTA</button>
                     <div id="pesertaList" class="card-list"></div>
@@ -1231,7 +1231,7 @@
                 const p = pesertaData.find(p => p.id === parseInt(pid));
                 if(p) {
                     const pptButton = p.linkppt ? `<button class="btn-ppt" onclick="window.open('${p.linkppt}', '_blank')">📽️ LIHAT MATERI PRESENTASI</button>` : '<div class="ppt-warning">⚠️ Belum ada link materi yang diupload</div>';
-                    document.getElementById('infoPeserta').innerHTML = `<div style="font-weight:bold; margin-bottom:0.5rem;">🏷️ ${p.nama || 'Unknown'}</div><div>💡 JUDUL PRESENTASI:<br>${p.judulConim || '-'}</div>${pptButton}`;
+                    document.getElementById('infoPeserta').innerHTML = `<div style="font-weight:bold; margin-bottom:0.5rem;">🏷️ ${p.nama || 'Unknown'}</div><div>💡 DEPARTEMEN:<br>${p.judulConim || '-'}</div>${pptButton}`;
                     document.getElementById('infoPeserta').style.display = 'block';
                 }
             } else {
