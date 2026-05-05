@@ -511,6 +511,16 @@
             display: inline-block;
             margin-bottom: 1rem;
         }
+        .dept-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.6rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -518,7 +528,7 @@
     <div class="login-box">
         <h2>🏆 EOTY 2026</h2>
         <h2 style="font-size:0.9rem; margin-top:-0.5rem;">DIGITALISASI MONITORING</h2>
-        <input type="text" id="loginUsername" placeholder="Masukkan Inisial" autocomplete="off">
+        <input type="text" id="loginUsername" placeholder="Masukkan Inisial Juri (contoh: AB, CD)" autocomplete="off">
         <button id="loginBtn">LOGIN</button>
         <div id="loginError" class="login-error"></div>
         <div id="loginLoading" class="login-loading" style="display:none;">⏳ Menghubungkan ke database...</div>
@@ -547,7 +557,7 @@
                 <div style="flex:2">
                     <h3>👥 PESERTA FINALIS</h3>
                     <input type="text" id="pesertaName" placeholder="Nama Peserta / Finalis">
-                    <input type="text" id="judulConim" placeholder="Departemen" style="margin-top:0.5rem;">
+                    <input type="text" id="departemen" placeholder="Departemen" style="margin-top:0.5rem;">
                     <input type="url" id="linkppt" placeholder="Link PPT / Materi Presentasi (Google Drive / YouTube)" style="margin-top:0.5rem;">
                     <button class="btn-primary" id="addPesertaBtn" style="margin-top:0.5rem">+ TAMBAH PESERTA</button>
                     <div id="pesertaList" class="card-list"></div>
@@ -727,15 +737,22 @@
             return true;
         }
         
-        async function addPeserta(nama, judul, linkppt) {
-            const newPeserta = { id: Date.now(), nama: nama.toUpperCase(), judulConim: judul.toUpperCase(), linkppt: linkppt || null };
+        async function addPeserta(nama, departemen, linkppt) {
+            // Menambahkan nilai default untuk kolom channel (karena di database NOT NULL)
+            const newPeserta = { 
+                id: Date.now(), 
+                nama: nama.toUpperCase(), 
+                judulConim: departemen.toUpperCase(), 
+                linkppt: linkppt || null,
+                channel: 'EOTY'  // <-- FIX: Menambahkan nilai default untuk kolom channel
+            };
             const { error } = await supabaseClient.from('peserta').insert([newPeserta]);
             if (error) {
                 showToast('Gagal tambah peserta: ' + error.message, true);
                 return false;
             }
             await loadAllData();
-            showToast(`Peserta ${nama} ditambahkan`);
+            showToast(`Peserta ${nama} dari Departemen ${departemen} ditambahkan`);
             return true;
         }
         
@@ -854,13 +871,13 @@
             const container = document.getElementById('pesertaList');
             if(container) {
                 container.innerHTML = pesertaData.map(p => {
-                    const judulDisplay = (p.judulConim && p.judulConim.substring) ? p.judulConim.substring(0,50) : (p.judulConim || '-');
+                    const deptDisplay = (p.judulConim && p.judulConim.substring) ? p.judulConim.substring(0,50) : (p.judulConim || '-');
                     const pptLink = p.linkppt ? `<div class="link-ppt">🔗 <a href="${p.linkppt}" target="_blank">Lihat Materi</a></div>` : '<div class="ppt-warning">⚠️ Belum upload materi</div>';
-                    return `<div class="card-item"><div><strong>${p.nama || 'Unknown'}</strong><br><small>📌 ${judulDisplay}${(p.judulConim && p.judulConim.length > 50) ? '...' : ''}</small>${pptLink}</div><button class="btn-danger" onclick="window.deletePesertaWrapper(${p.id})">HAPUS</button></div>`;
+                    return `<div class="card-item"><div><strong>${p.nama || 'Unknown'}</strong> <span class="dept-badge">📁 ${deptDisplay}</span>${pptLink}</div><button class="btn-danger" onclick="window.deletePesertaWrapper(${p.id})">HAPUS</button></div>`;
                 }).join('');
             }
             const filterPeserta = document.getElementById('filterPesertaRiwayat');
-            if(filterPeserta) filterPeserta.innerHTML = '<option value="">SEMUA PESERTA</option>' + pesertaData.map(p => `<option value="${p.id}">${p.nama || 'Unknown'}</option>`).join('');
+            if(filterPeserta) filterPeserta.innerHTML = '<option value="">SEMUA PESERTA</option>' + pesertaData.map(p => `<option value="${p.id}">${p.nama || 'Unknown'} (${p.judulConim || '-'})</option>`).join('');
             renderDropdownPeserta();
         }
         
@@ -873,7 +890,7 @@
             }
             let html = '<option value="">-- PILIH PESERTA FINALIS --</option>';
             daftar.forEach(p => {
-                html += `<option value="${p.id}">${p.nama || 'Unknown'}</option>`;
+                html += `<option value="${p.id}">${p.nama || 'Unknown'} (${p.judulConim || '-'})</option>`;
             });
             dp.innerHTML = html;
         }
@@ -978,7 +995,7 @@
                         detail += `<div class="riwayat-score-item"><span>${k?.kode || '?'} ${k?.nama?.substring(0,30) || ''}</span><span><strong>${nk.nilai || 0}</strong></span></div>`;
                     });
                 }
-                html += `<div class="riwayat-card"><div class="riwayat-header"><span class="riwayat-peserta">📌 ${peserta?.nama || 'Unknown'}</span><span class="riwayat-juri">👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div><div class="riwayat-detail">${detail}<div class="riwayat-total">🏆 TOTAL SKOR: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div></div>`;
+                html += `<div class="riwayat-card"><div class="riwayat-header"><span class="riwayat-peserta">📌 ${peserta?.nama || 'Unknown'} <span class="dept-badge">${peserta?.judulConim || '-'}</span></span><span class="riwayat-juri">👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div><div class="riwayat-detail">${detail}<div class="riwayat-total">🏆 TOTAL SKOR: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
@@ -1016,7 +1033,7 @@
             chartInstance = new Chart(ctx, { 
                 type: 'bar', 
                 data: { 
-                    labels: pesertaScores.map(p => p.nama || 'Unknown'), 
+                    labels: pesertaScores.map(p => `${p.nama || 'Unknown'} (${p.judulConim || '-'})`), 
                     datasets 
                 }, 
                 options: { 
@@ -1045,7 +1062,7 @@
             const rankingHtml = pesertaScores.map((ps, i) => {
                 const juriItems = Object.entries(ps.skorPerJuri).map(([j,s]) => `<div class="juri-score-item">${j}: ${s}</div>`).join('');
                 return `<div class="peserta-score-card">
-                            <div class="peserta-name">${i+1}. ${ps.nama || 'Unknown'}</div>
+                            <div class="peserta-name">${i+1}. ${ps.nama || 'Unknown'} <span class="dept-badge">📁 ${ps.judulConim || '-'}</span></div>
                             <div class="score-badge">🏆 TOTAL SKOR: ${ps.totalSkor}</div>
                             <div class="juri-scores">${juriItems}</div>
                         </div>`;
@@ -1074,7 +1091,7 @@
                         detail += `<div class="riwayat-score-item"><span>${k?.kode || '?'} ${k?.nama?.substring(0,25) || ''}</span><span>${nk.nilai || 0}</span></div>`; 
                     });
                 }
-                html += `<div class="riwayat-card"><div class="riwayat-header"><span>📌 ${peserta?.nama || 'Unknown'}</span><span>👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div>${detail}<div class="riwayat-total">🏆 TOTAL: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div>`;
+                html += `<div class="riwayat-card"><div class="riwayat-header"><span>📌 ${peserta?.nama || 'Unknown'} <span class="dept-badge">${peserta?.judulConim || '-'}</span></span><span>👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div>${detail}<div class="riwayat-total">🏆 TOTAL: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
@@ -1184,13 +1201,13 @@
         
         document.getElementById('addPesertaBtn')?.addEventListener('click', async () => {
             const nama = document.getElementById('pesertaName').value.trim();
-            const judul = document.getElementById('judulConim').value.trim();
+            const departemen = document.getElementById('departemen').value.trim();
             const linkppt = document.getElementById('linkppt').value.trim();
             if(!nama) { showToast('Nama peserta wajib diisi!', true); return; }
-            if(!judul) { showToast('Judul improvement wajib diisi!', true); return; }
-            await addPeserta(nama, judul, linkppt || null);
+            if(!departemen) { showToast('Departemen wajib diisi!', true); return; }
+            await addPeserta(nama, departemen, linkppt || null);
             document.getElementById('pesertaName').value = '';
-            document.getElementById('judulConim').value = '';
+            document.getElementById('departemen').value = '';
             document.getElementById('linkppt').value = '';
         });
         
@@ -1231,7 +1248,7 @@
                 const p = pesertaData.find(p => p.id === parseInt(pid));
                 if(p) {
                     const pptButton = p.linkppt ? `<button class="btn-ppt" onclick="window.open('${p.linkppt}', '_blank')">📽️ LIHAT MATERI PRESENTASI</button>` : '<div class="ppt-warning">⚠️ Belum ada link materi yang diupload</div>';
-                    document.getElementById('infoPeserta').innerHTML = `<div style="font-weight:bold; margin-bottom:0.5rem;">🏷️ ${p.nama || 'Unknown'}</div><div>💡 DEPARTEMEN:<br>${p.judulConim || '-'}</div>${pptButton}`;
+                    document.getElementById('infoPeserta').innerHTML = `<div style="font-weight:bold; margin-bottom:0.5rem;">🏷️ ${p.nama || 'Unknown'}</div><div>🏢 DEPARTEMEN: <strong>${p.judulConim || '-'}</strong></div>${pptButton}`;
                     document.getElementById('infoPeserta').style.display = 'block';
                 }
             } else {
@@ -1246,9 +1263,6 @@
             document.getElementById('filterJuriRiwayat').value = ''; 
             renderRiwayatAll(); 
         });
-        
-        // Set default active for first dashboard selector (not used but kept for compatibility)
-        document.querySelectorAll('#dashboardStreamSelector .stream-radio')[0]?.classList.add('active');
     })();
 </script>
 </body>
