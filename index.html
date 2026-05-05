@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Digitalisasi Monitoring - EOTY 2026 FINALIS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+        }
+        .login-box {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            text-transform: uppercase;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 1rem;
+            font-size: 1rem;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 0.8rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .login-error {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .login-loading {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .navbar {
+            background: white;
+            border-radius: 2rem;
+            padding: 0.8rem 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .navbar {
+                justify-content: flex-start;
+                padding: 0.8rem 1.5rem;
+            }
+            body { padding: 20px; }
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 2rem;
+            cursor: pointer;
+            color: #334155;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        @media (min-width: 640px) {
+            .nav-btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
+        }
+
+        .nav-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+            background: #e0e7ff;
+            padding: 0.3rem 0.8rem 0.3rem 1rem;
+            border-radius: 2rem;
+        }
+
+        .user-info {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #1e40af;
+            white-space: nowrap;
+        }
+
+        .logout-icon {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        @media (min-width: 640px) { .panel { padding: 1.5rem; } }
+
+        .panel.active-panel { display: block; }
+
+        h2, h3 {
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            color: #0f172a;
+            border-left: 6px solid #3b82f6;
+            padding-left: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+        button.btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        button.btn-primary:hover { background: #2563eb; }
+        button.btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+        button.btn-warning {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            font-size: 0.65rem;
+        }
+        button.btn-ppt {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 0.8rem;
+            width: 100%;
+        }
+        button.btn-ppt:hover { background: #7c3aed; }
+        .card-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .card-item {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 0.7rem;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .riwayat-card {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            border-left: 4px solid #f59e0b;
+        }
+        .riwayat-header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .riwayat-peserta { font-weight: bold; color: #1e293b; }
+        .riwayat-juri {
+            background: #e0e7ff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.65rem;
+        }
+        .riwayat-detail { font-size: 0.7rem; color: #475569; }
+        .riwayat-total {
+            font-weight: bold;
+            color: #3b82f6;
+            margin-top: 0.5rem;
+        }
+        .riwayat-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0;
+            font-size: 0.7rem;
+            border-bottom: 1px dotted #e2e8f0;
+        }
+        .kriteria-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.7rem;
+        }
+        .kriteria-header {
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 0.7rem;
+            color: #1e293b;
+        }
+        .rubrik-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+        @media (min-width: 768px) {
+            .rubrik-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .rubrik-item {
+            padding: 0.4rem;
+            border-radius: 0.5rem;
+            font-size: 0.6rem;
+            line-height: 1.4;
+        }
+        .rubrik-kurang { background: #fef2f2; border-left: 3px solid #ef4444; }
+        .rubrik-cukup { background: #fffbeb; border-left: 3px solid #f59e0b; }
+        .rubrik-baik { background: #eff6ff; border-left: 3px solid #3b82f6; }
+        .rubrik-excellent { background: #ecfdf5; border-left: 3px solid #10b981; }
+        .rubrik-title { font-weight: bold; margin-bottom: 0.2rem; font-size: 0.65rem; }
+        .rating-circles {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        .circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.75rem;
+            cursor: pointer;
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            color: #475569;
+        }
+        @media (min-width: 640px) {
+            .circle { width: 36px; height: 36px; font-size: 0.85rem; }
+        }
+        .circle:hover { transform: scale(1.05); background: #e2e8f0; }
+        .circle.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.7rem;
+        }
+        @media (min-width: 640px) {
+            .grid-2 { grid-template-columns: 1fr; gap: 1rem; }
+        }
+        .alert {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            font-size: 0.7rem;
+        }
+        .alert-error { background: #fee2e2; color: #b91c1c; }
+        .alert-success { background: #dcfce7; color: #166534; }
+        
+        /* DASHBOARD STYLES */
+        .dashboard-full {
+            width: 100%;
+        }
+        .stat-card-full {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+        .stat-card-full h4 {
+            margin-bottom: 1rem;
+            color: #1e293b;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .chart-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        .ranking-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 0.8rem;
+        }
+        .peserta-score-card {
+            background: white;
+            border-radius: 0.8rem;
+            padding: 0.8rem;
+            border: 1px solid #e2e8f0;
+        }
+        .peserta-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        .score-badge {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+        }
+        .juri-scores {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+        }
+        .juri-score-item {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.65rem;
+        }
+        .riwayat-container { max-height: 400px; overflow-y: auto; }
+        .toast-notif {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .link-ppt {
+            margin-top: 0.5rem;
+            word-break: break-all;
+            font-size: 0.7rem;
+        }
+        .link-ppt a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .link-ppt a:hover {
+            text-decoration: underline;
+        }
+        .ppt-warning {
+            color: #f59e0b;
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+        }
+        .small-text {
+            font-size: 0.6rem;
+            color: #64748b;
+        }
+        
+        .riwayat-3-col {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 0.8rem;
+        }
+        @media (min-width: 768px) {
+            .riwayat-3-col {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            .riwayat-3-col {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .info-peserta-card {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        .eoty-badge {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div id="loginContainer" class="login-container">
+    <div class="login-box">
+        <h2>🏆 EOTY 2026</h2>
+        <h2 style="font-size:0.9rem; margin-top:-0.5rem;">DIGITALISASI MONITORING</h2>
+        <input type="text" id="loginUsername" placeholder="Masukkan Inisial Juri (contoh: AB, CD)" autocomplete="off">
+        <button id="loginBtn">LOGIN</button>
+        <div id="loginError" class="login-error"></div>
+        <div id="loginLoading" class="login-loading" style="display:none;">⏳ Menghubungkan ke database...</div>
+        <div style="margin-top:1rem; font-size:0.7rem; color:#64748b; text-align:center;">
+            Admin: NKP / ERW<br>Juri: Login menggunakan INISIAL
+        </div>
+    </div>
+</div>
+
+<div id="appContent" style="display: none;">
+    <div class="container">
+        <div class="navbar" id="navbarContainer"></div>
+
+        <div id="managementPanel" class="panel">
+            <h2>⚙️ MANAGEMENT DATA - EOTY 2026</h2>
+            <div class="eoty-badge">⭐ FINALIS EOTY 2026 ⭐</div>
+            
+            <div style="display:flex; flex-wrap:wrap; gap:1rem;">
+                <div style="flex:1">
+                    <h3>👨‍⚖️ JURI (Login dengan INISIAL)</h3>
+                    <input type="text" id="juriInisial" placeholder="Inisial Juri (contoh: AB)">
+                    <input type="text" id="juriName" placeholder="Nama Lengkap" style="margin-top:0.5rem;">
+                    <button class="btn-primary" id="addJuriBtn" style="margin-top:0.5rem">+ TAMBAH JURI</button>
+                    <div id="juriList" class="card-list"></div>
+                    <div class="small-text" style="margin-top:0.5rem;">⚠️ Juri login menggunakan INISIAL yang didaftarkan</div>
+                </div>
+                <div style="flex:2">
+                    <h3>👥 PESERTA FINALIS</h3>
+                    <input type="text" id="pesertaName" placeholder="Nama Peserta / Finalis">
+                    <input type="text" id="judulConim" placeholder="Judul Improvement / Presentasi" style="margin-top:0.5rem;">
+                    <input type="url" id="linkppt" placeholder="Link PPT / Materi Presentasi (Google Drive / YouTube)" style="margin-top:0.5rem;">
+                    <button class="btn-primary" id="addPesertaBtn" style="margin-top:0.5rem">+ TAMBAH PESERTA</button>
+                    <div id="pesertaList" class="card-list"></div>
+                </div>
+            </div>
+            <hr style="margin: 1.2rem 0">
+            <h3>📋 KRITERIA PENILAIAN EOTY</h3>
+            <div class="grid-2">
+                <input type="text" id="kriteriaKode" placeholder="Kode (1A,2B)">
+                <input type="text" id="kriteriaName" placeholder="Nama Kriteria">
+            </div>
+            <textarea id="descKurang" rows="2" placeholder="Deskripsi KURANG (skor 1-4)"></textarea>
+            <textarea id="descCukup" rows="2" placeholder="Deskripsi CUKUP (skor 5-6)"></textarea>
+            <textarea id="descBaik" rows="2" placeholder="Deskripsi BAIK (skor 7-8)"></textarea>
+            <textarea id="descExcellent" rows="2" placeholder="Deskripsi EXCELLENT (skor 9-10)"></textarea>
+            <div class="grid-2">
+                <input type="number" id="kriteriaBobot" placeholder="Bobot Max" value="10">
+                <input type="number" id="kriteriaUrutan" placeholder="Urutan" value="1">
+            </div>
+            <button class="btn-primary" id="addKriteriaBtn">+ TAMBAH KRITERIA</button>
+            <button class="btn-primary" id="resetDefaultBtn" style="background:#64748b; margin-left:0.5rem">🔄 RESET DEFAULT</button>
+            <div id="kriteriaListMgmt" class="card-list"></div>
+        </div>
+
+        <div id="formPanel" class="panel">
+            <h2>📝 FORM PENILAIAN - EOTY 2026</h2>
+            <div id="formAlert"></div>
+            <div class="form-group">
+                <label>PILIH PESERTA FINALIS</label>
+                <select id="dropdownPeserta"></select>
+            </div>
+            <div id="infoPeserta" class="info-peserta-card" style="display:none;"></div>
+            <div id="dynamicKriteriaNilai"></div>
+            <button class="btn-primary" id="submitPenilaianBtn" style="margin-top:1rem; width:100%; display:none;">✅ SUBMIT PENILAIAN</button>
+            <div style="margin-top:1rem; font-weight:bold; border-bottom:2px solid #f59e0b; display:inline-block;">📜 RIWAYAT PENILAIAN SAYA</div>
+            <div id="riwayatPenilaian" class="riwayat-container" style="margin-top:0.8rem;"></div>
+        </div>
+
+        <div id="dashboardPanel" class="panel">
+            <h2>📊 DASHBOARD PENILAIAN EOTY 2026</h2>
+            <div class="eoty-badge">🏆 RANKING FINALIS 🏆</div>
+            
+            <div class="dashboard-full">
+                <!-- GRAFIK UTAMA SEMUA PESERTA -->
+                <div class="stat-card-full">
+                    <h4>📊 GRAFIK TOTAL SKOR PER FINALIS (URUT TERTINGGI → TERENDAH)</h4>
+                    <div class="chart-container">
+                        <canvas id="scoreChart" width="800" height="400"></canvas>
+                    </div>
+                </div>
+                
+                <!-- RANKING SEMUA PESERTA -->
+                <div class="stat-card-full">
+                    <h4>🏆 RANKING & DETAIL SKOR FINALIS</h4>
+                    <div id="scoreCardList" class="ranking-container"></div>
+                </div>
+            </div>
+            
+            <div class="stat-card-full">
+                <h4>📜 RIWAYAT SEMUA PENILAIAN</h4>
+                <div style="display:flex; gap:0.8rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <label>FILTER PESERTA</label>
+                        <select id="filterPesertaRiwayat">
+                            <option value="">SEMUA PESERTA</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <label>FILTER JURI</label>
+                        <select id="filterJuriRiwayat">
+                            <option value="">SEMUA JURI</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="resetFilterBtn" style="background:#64748b; margin-top:1.5rem;">RESET</button>
+                </div>
+                <div id="riwayatAll" class="riwayat-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const SUPABASE_URL = "https://pmrwkmekxqvaxeifvenn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtcndrbWVreHF2YXhlaWZ2ZW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3ODc2OTUsImV4cCI6MjA5MTM2MzY5NX0.dUsyZUHQCXgjqjPpXHoZSnyRQENwmNTZbWyVyU0qzbw";
+        
+        Chart.register(ChartDataLabels);
+        
+        let supabaseClient = null;
+        let currentUser = null;
+        let nilaiKriteria = {};
+        let chartInstance = null;
+        
+        let juriData = [];
+        let pesertaData = [];
+        let kriteriaData = [];
+        let penilaianData = [];
+        
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notif';
+            toast.style.background = isError ? '#ef4444' : '#10b981';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        const DEFAULT_KRITERIA = [
+            { kode:"1A", nama:"IDENTIFIKASI MASALAH & PENENTUAN TEMA", descKurang:"TIDAK ADA IDENTIFIKASI YANG JELAS", descCukup:"PRIORITAS DITINJAU DARI SEBAGIAN ASPEK", descBaik:"DATA LENGKAP DAN AKURAT", descExcellent:"SEMUA ASPEK MUTU, DATA LENGKAP", bobot:10, urutan:1 },
+            { kode:"2A", nama:"ANALISIS SEBAB AKIBAT", descKurang:"KORELASI TIDAK LOGIS", descCukup:"SEBAGIAN KORELASI TIDAK LOGIS", descBaik:"KORELASI LOGIS", descExcellent:"KORELASI LOGIS & LENGKAP", bobot:10, urutan:2 },
+            { kode:"2C", nama:"PERENCANAAN PERBAIKAN", descKurang:"TIDAK SISTEMATIS", descCukup:"ASPEK 5W+2H TIDAK JELAS", descBaik:"ASPEK 5W+2H GLOBAL", descExcellent:"ASPEK 5W+2H DETAIL", bobot:10, urutan:3 },
+            { kode:"2D", nama:"PEMANFAATAN PERANAN PIHAK TERKAIT", descKurang:"KURANG DIDUKUNG", descCukup:"DIDUKUNG BEBERAPA", descBaik:"DIDUKUNG SEMUA", descExcellent:"DIDUKUNG AKTIF", bobot:10, urutan:4 },
+            { kode:"3B", nama:"KATEGORI SOLUSI", descKurang:"MENIRU", descCukup:"MENINGKATKAN KINERJA", descBaik:"INOVASI NASIONAL", descExcellent:"INVENSI INTERNASIONAL", bobot:10, urutan:5 },
+            { kode:"4B", nama:"PEMANTAUAN & PENERAPAN", descKurang:"SPONTAN", descCukup:"SISTEMATIS TANPA DOKUMENTASI", descBaik:"DOKUMENTASI PROSES UTAMA", descExcellent:"DOKUMENTASI LENGKAP", bobot:10, urutan:6 },
+            { kode:"6A", nama:"EVALUASI HASIL", descKurang:"DIBAWAH 2 ASPEK", descCukup:"2-3 ASPEK", descBaik:"4-5 ASPEK", descExcellent:"6-7 ASPEK", bobot:10, urutan:7 },
+            { kode:"8A", nama:"STANDARDISASI", descKurang:"BELUM DISAHKAN", descCukup:"DISAHKAN TIDAK LENGKAP", descBaik:"LENGKAP TIDAK TERJAMIN", descExcellent:"LENGKAP DAN TERJAMIN", bobot:10, urutan:8 },
+            { kode:"10A", nama:"KEJELASAN PRESENTASI", descKurang:"TIDAK INFORMATIF", descCukup:"KURANG JELAS", descBaik:"ANIMASI KURANG TEPAT", descExcellent:"ANIMASI TEPAT", bobot:10, urutan:9 }
+        ];
+        
+        async function initSupabase() {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const { error } = await supabaseClient.from('juri').select('count', { count: 'exact', head: true });
+            if (error) {
+                document.getElementById('loginError').innerHTML = '❌ Gagal koneksi! Pastikan tabel sudah dibuat di Supabase.';
+                return false;
+            }
+            await loadAllData();
+            await ensureDefaultData();
+            return true;
+        }
+        
+        async function ensureDefaultData() {
+            if (kriteriaData.length === 0) {
+                for (const k of DEFAULT_KRITERIA) {
+                    await supabaseClient.from('kriteria').insert([k]);
+                }
+                await loadAllData();
+            }
+        }
+        
+        async function loadAllData() {
+            if (!supabaseClient) return;
+            const [juriRes, pesertaRes, kriteriaRes, penilaianRes] = await Promise.all([
+                supabaseClient.from('juri').select('*').order('id'),
+                supabaseClient.from('peserta').select('*').order('nama'),
+                supabaseClient.from('kriteria').select('*').order('urutan'),
+                supabaseClient.from('penilaian').select('*').order('id', { ascending: false })
+            ]);
+            juriData = juriRes.data || [];
+            pesertaData = pesertaRes.data || [];
+            kriteriaData = kriteriaRes.data || [];
+            penilaianData = penilaianRes.data || [];
+            renderAllUI();
+        }
+        
+        async function addJuri(inisial, nama) {
+            const newJuri = { id: Date.now(), nik: inisial.toUpperCase(), nama: nama.toUpperCase() };
+            const { error } = await supabaseClient.from('juri').insert([newJuri]);
+            if (error) {
+                showToast('Gagal tambah juri: ' + error.message, true);
+                return false;
+            }
+            await loadAllData();
+            showToast(`Juri ${nama} (Inisial: ${inisial.toUpperCase()}) ditambahkan`);
+            return true;
+        }
+        
+        async function deleteJuri(id) {
+            const { error } = await supabaseClient.from('juri').delete().eq('id', id);
+            if (error) {
+                showToast('Gagal hapus juri', true);
+                return false;
+            }
+            await supabaseClient.from('penilaian').delete().eq('juriId', id);
+            await loadAllData();
+            showToast('Juri berhasil dihapus');
+            return true;
+        }
+        
+        async function addPeserta(nama, judul, linkppt) {
+            const newPeserta = { id: Date.now(), nama: nama.toUpperCase(), judulConim: judul.toUpperCase(), linkppt: linkppt || null };
+            const { error } = await supabaseClient.from('peserta').insert([newPeserta]);
+            if (error) {
+                showToast('Gagal tambah peserta: ' + error.message, true);
+                return false;
+            }
+            await loadAllData();
+            showToast(`Peserta ${nama} ditambahkan`);
+            return true;
+        }
+        
+        async function deletePeserta(id) {
+            const { error } = await supabaseClient.from('peserta').delete().eq('id', id);
+            if (error) {
+                showToast('Gagal hapus peserta', true);
+                return false;
+            }
+            await supabaseClient.from('penilaian').delete().eq('pesertaId', id);
+            await loadAllData();
+            showToast('Peserta berhasil dihapus');
+            return true;
+        }
+        
+        async function addKriteria(kriteria) {
+            const newKriteria = { 
+                id: Date.now(),
+                kode: kriteria.kode || '',
+                nama: kriteria.nama,
+                descKurang: kriteria.descKurang || '',
+                descCukup: kriteria.descCukup || '',
+                descBaik: kriteria.descBaik || '',
+                descExcellent: kriteria.descExcellent || '',
+                bobot: kriteria.bobot || 10,
+                urutan: kriteria.urutan || (kriteriaData.length + 1)
+            };
+            const { error } = await supabaseClient.from('kriteria').insert([newKriteria]);
+            if (error) {
+                showToast('Gagal tambah kriteria: ' + error.message, true);
+                return false;
+            }
+            await loadAllData();
+            showToast('Kriteria ' + kriteria.nama + ' berhasil ditambahkan');
+            return true;
+        }
+        
+        async function updateKriteria(k) {
+            const { error } = await supabaseClient.from('kriteria').update(k).eq('id', k.id);
+            if (error) {
+                showToast('Gagal update kriteria', true);
+                return false;
+            }
+            await loadAllData();
+            showToast('Kriteria berhasil diupdate');
+            return true;
+        }
+        
+        async function deleteKriteria(id) {
+            const { error } = await supabaseClient.from('kriteria').delete().eq('id', id);
+            if (error) {
+                showToast('Gagal hapus kriteria', true);
+                return false;
+            }
+            await loadAllData();
+            showToast('Kriteria berhasil dihapus');
+            return true;
+        }
+        
+        async function submitPenilaianToDb(pesertaId, juriId, nilaiPerKriteria) {
+            const newPenilaian = {
+                id: Date.now(),
+                pesertaId: parseInt(pesertaId),
+                juriId: parseInt(juriId),
+                tanggal: new Date().toLocaleString('id-ID'),
+                nilaiPerKriteria: nilaiPerKriteria
+            };
+            const { error } = await supabaseClient.from('penilaian').insert([newPenilaian]);
+            if (error) {
+                showToast('Gagal simpan penilaian: ' + error.message, true);
+                return false;
+            }
+            await loadAllData();
+            showToast('Penilaian berhasil disimpan!');
+            return true;
+        }
+        
+        async function resetDefaultKriteria() {
+            const { error } = await supabaseClient.from('kriteria').delete().neq('id', 0);
+            if (error) {
+                showToast('Gagal reset kriteria', true);
+                return false;
+            }
+            for (const k of DEFAULT_KRITERIA) {
+                await supabaseClient.from('kriteria').insert([{ ...k, id: Date.now() + Math.random() }]);
+            }
+            await loadAllData();
+            showToast('Kriteria berhasil direset ke default');
+            return true;
+        }
+        
+        function sudahMenilai(juriId, pesertaId) {
+            return penilaianData.some(p => p.juriId === juriId && p.pesertaId === pesertaId);
+        }
+        
+        function renderAllUI() {
+            renderJuriList();
+            renderPesertaList();
+            renderKriteriaMgmt();
+            renderFormKriteriaNilai();
+            renderDropdownPeserta();
+            renderRiwayatForm();
+            renderDashboard();
+            renderRiwayatAll();
+        }
+        
+        function renderJuriList() {
+            const container = document.getElementById('juriList');
+            if(!container) return;
+            container.innerHTML = juriData.map(j => `<div class="card-item"><span>👨‍⚖️ <strong>${j.nik || '-'}</strong> - ${j.nama || 'Unknown'}</span><button class="btn-danger" onclick="window.deleteJuriWrapper(${j.id})">HAPUS</button></div>`).join('');
+            const filterJuri = document.getElementById('filterJuriRiwayat');
+            if(filterJuri) filterJuri.innerHTML = '<option value="">SEMUA JURI</option>' + juriData.map(j => `<option value="${j.id}">${j.nik || j.nama || 'Unknown'}</option>`).join('');
+        }
+        
+        function renderPesertaList() {
+            const container = document.getElementById('pesertaList');
+            if(container) {
+                container.innerHTML = pesertaData.map(p => {
+                    const judulDisplay = (p.judulConim && p.judulConim.substring) ? p.judulConim.substring(0,50) : (p.judulConim || '-');
+                    const pptLink = p.linkppt ? `<div class="link-ppt">🔗 <a href="${p.linkppt}" target="_blank">Lihat Materi</a></div>` : '<div class="ppt-warning">⚠️ Belum upload materi</div>';
+                    return `<div class="card-item"><div><strong>${p.nama || 'Unknown'}</strong><br><small>📌 ${judulDisplay}${(p.judulConim && p.judulConim.length > 50) ? '...' : ''}</small>${pptLink}</div><button class="btn-danger" onclick="window.deletePesertaWrapper(${p.id})">HAPUS</button></div>`;
+                }).join('');
+            }
+            const filterPeserta = document.getElementById('filterPesertaRiwayat');
+            if(filterPeserta) filterPeserta.innerHTML = '<option value="">SEMUA PESERTA</option>' + pesertaData.map(p => `<option value="${p.id}">${p.nama || 'Unknown'}</option>`).join('');
+            renderDropdownPeserta();
+        }
+        
+        function renderDropdownPeserta() {
+            const dp = document.getElementById('dropdownPeserta');
+            if(!dp) return;
+            let daftar = pesertaData;
+            if(currentUser?.role === 'juri' && currentUser.juriId) {
+                daftar = pesertaData.filter(p => !sudahMenilai(currentUser.juriId, p.id));
+            }
+            let html = '<option value="">-- PILIH PESERTA FINALIS --</option>';
+            daftar.forEach(p => {
+                html += `<option value="${p.id}">${p.nama || 'Unknown'}</option>`;
+            });
+            dp.innerHTML = html;
+        }
+        
+        function renderKriteriaMgmt() {
+            const container = document.getElementById('kriteriaListMgmt');
+            if(!container) return;
+            if(kriteriaData.length === 0) {
+                container.innerHTML = '<div class="card-item">Belum ada kriteria. Klik "TAMBAH KRITERIA"</div>';
+                return;
+            }
+            container.innerHTML = kriteriaData.map(k => `<div class="card-item" style="flex-direction:column; align-items:flex-start;"><div><strong>[${k.kode || ''}] ${k.nama || 'Unknown'}</strong> <button class="btn-warning" onclick="window.editKriteriaWrapper(${k.id})">EDIT</button><button class="btn-danger" onclick="window.deleteKriteriaWrapper(${k.id})">HAPUS</button></div><div style="font-size:0.65rem; color:#666;">Bobot: ${k.bobot || 10} | Urutan: ${k.urutan || '-'}</div></div>`).join('');
+        }
+        
+        function renderFormKriteriaNilai() {
+            const container = document.getElementById('dynamicKriteriaNilai');
+            if(!container) return;
+            if(kriteriaData.length === 0) { 
+                container.innerHTML = '<div class="alert alert-error">⚠️ BELUM ADA KRITERIA. ADMIN HARAP TAMBAH KRITERIA DULU DI MENU MANAGEMENT!</div>'; 
+                return; 
+            }
+            container.innerHTML = kriteriaData.map(k => {
+                let circles = '';
+                const maxBobot = k.bobot || 10;
+                for(let i=1; i<=maxBobot; i++) {
+                    circles += `<div class="circle" id="circle_${k.id}_${i}" data-score="${i}" onclick="window.setRating(${k.id}, ${i})">${i}</div>`;
+                }
+                return `<div class="kriteria-card"><div class="kriteria-header">📌 [${k.kode || ''}] ${k.nama || 'Unknown'}</div>
+                        <div class="rubrik-grid">
+                            <div class="rubrik-item rubrik-kurang"><div class="rubrik-title">🔴 KURANG (1-4)</div><div>${k.descKurang || '-'}</div></div>
+                            <div class="rubrik-item rubrik-cukup"><div class="rubrik-title">🟠 CUKUP (5-6)</div><div>${k.descCukup || '-'}</div></div>
+                            <div class="rubrik-item rubrik-baik"><div class="rubrik-title">🔵 BAIK (7-8)</div><div>${k.descBaik || '-'}</div></div>
+                            <div class="rubrik-item rubrik-excellent"><div class="rubrik-title">🟢 EXCELLENT (9-10)</div><div>${k.descExcellent || '-'}</div></div>
+                        </div>
+                        <div class="rating-circles">${circles}</div>
+                        <div id="selected_value_${k.id}" style="font-size:0.7rem; text-align:center; margin-top:0.3rem; color:#3b82f6;"></div>
+                    </div>`;
+            }).join('');
+        }
+        
+        window.setRating = function(kriteriaId, score) {
+            nilaiKriteria[kriteriaId] = score;
+            for(let i=1; i<=10; i++) {
+                const el = document.getElementById(`circle_${kriteriaId}_${i}`);
+                if(el) i<=score ? el.classList.add('active') : el.classList.remove('active');
+            }
+            const span = document.getElementById(`selected_value_${kriteriaId}`);
+            if(span) span.innerHTML = `⭐ NILAI TERPILIH: ${score} ⭐`;
+        };
+        
+        async function handleSubmitPenilaian() {
+            const pesertaId = document.getElementById('dropdownPeserta').value;
+            if(!pesertaId) {
+                showToast('Pilih peserta dulu!', true);
+                return;
+            }
+            if(currentUser?.role !== 'juri') {
+                showToast('Hanya juri yang bisa menilai!', true);
+                return;
+            }
+            if(sudahMenilai(currentUser.juriId, parseInt(pesertaId))) {
+                showToast('Anda sudah menilai peserta ini!', true);
+                return;
+            }
+            const nilaiPerKriteria = [];
+            for(const k of kriteriaData) {
+                const val = nilaiKriteria[k.id];
+                if(!val) {
+                    showToast(`Isi semua kriteria! (${k.nama})`, true);
+                    return;
+                }
+                nilaiPerKriteria.push({ kriteriaId: k.id, nilai: val });
+            }
+            const success = await submitPenilaianToDb(pesertaId, currentUser.juriId, nilaiPerKriteria);
+            if(success) {
+                nilaiKriteria = {};
+                renderFormKriteriaNilai();
+                renderDropdownPeserta();
+                renderRiwayatForm();
+                renderDashboard();
+                renderRiwayatAll();
+                document.getElementById('dropdownPeserta').value = '';
+                document.getElementById('infoPeserta').style.display = 'none';
+            }
+        }
+        
+        function renderRiwayatForm() {
+            const container = document.getElementById('riwayatPenilaian');
+            if(!container) return;
+            let data = [...penilaianData];
+            if(currentUser?.role === 'juri' && currentUser.juriId) data = data.filter(p => p.juriId === currentUser.juriId);
+            if(data.length === 0) { container.innerHTML = '<div class="card-item">📭 Belum ada penilaian</div>'; return; }
+            let html = '<div class="riwayat-3-col">';
+            data.forEach(pen => {
+                const peserta = pesertaData.find(p => p.id === pen.pesertaId);
+                const juri = juriData.find(j => j.id === pen.juriId);
+                let total = 0, detail = '';
+                if(pen.nilaiPerKriteria && Array.isArray(pen.nilaiPerKriteria)) {
+                    pen.nilaiPerKriteria.forEach(nk => {
+                        const k = kriteriaData.find(kr => kr.id === nk.kriteriaId);
+                        total += nk.nilai || 0;
+                        detail += `<div class="riwayat-score-item"><span>${k?.kode || '?'} ${k?.nama?.substring(0,30) || ''}</span><span><strong>${nk.nilai || 0}</strong></span></div>`;
+                    });
+                }
+                html += `<div class="riwayat-card"><div class="riwayat-header"><span class="riwayat-peserta">📌 ${peserta?.nama || 'Unknown'}</span><span class="riwayat-juri">👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div><div class="riwayat-detail">${detail}<div class="riwayat-total">🏆 TOTAL SKOR: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function renderDashboard() {
+            // Hitung skor semua peserta
+            const pesertaScores = pesertaData.map(p => {
+                const penilaianPeserta = penilaianData.filter(pen => pen.pesertaId === p.id);
+                let totalSkor = 0, skorPerJuri = {};
+                penilaianPeserta.forEach(pen => {
+                    const totalNilai = Array.isArray(pen.nilaiPerKriteria) ? pen.nilaiPerKriteria.reduce((s, nk) => s + (nk.nilai || 0), 0) : 0;
+                    totalSkor += totalNilai;
+                    const juri = juriData.find(j => j.id === pen.juriId);
+                    if(juri) skorPerJuri[`${juri.nik || ''}-${juri.nama || ''}`] = (skorPerJuri[`${juri.nik || ''}-${juri.nama || ''}`] || 0) + totalNilai;
+                });
+                return { ...p, totalSkor, skorPerJuri };
+            });
+            
+            // Urutkan dari tertinggi ke terendah untuk chart utama
+            pesertaScores.sort((a,b) => b.totalSkor - a.totalSkor);
+            
+            // RENDER CHART UTAMA (semua peserta)
+            const juriListForChart = [...new Set(juriData.map(j => `${j.nik || ''}-${j.nama || ''}`))];
+            const datasets = juriListForChart.map((jLabel, idx) => ({ 
+                label: jLabel, 
+                data: pesertaScores.map(ps => ps.skorPerJuri[jLabel] || 0), 
+                backgroundColor: `hsl(${idx * 60}, 70%, 50%)`, 
+                stack: 'stack0', 
+                datalabels: { anchor: 'center', align: 'center', formatter: v => v || '', color: 'white', font: { size: 10 } } 
+            }));
+            
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { 
+                type: 'bar', 
+                data: { 
+                    labels: pesertaScores.map(p => p.nama || 'Unknown'), 
+                    datasets 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: true, 
+                    scales: { 
+                        x: { 
+                            stacked: true, 
+                            ticks: { font: { size: 11 } },
+                            title: { display: true, text: 'Finalis (diurutkan dari skor tertinggi → terendah)' }
+                        }, 
+                        y: { 
+                            stacked: true, 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Total Skor' } 
+                        } 
+                    }, 
+                    plugins: { 
+                        datalabels: { anchor: 'center', align: 'center' }, 
+                        legend: { position: 'top', labels: { font: { size: 10 } } } 
+                    } 
+                } 
+            });
+            
+            // RENDER RANKING
+            const rankingHtml = pesertaScores.map((ps, i) => {
+                const juriItems = Object.entries(ps.skorPerJuri).map(([j,s]) => `<div class="juri-score-item">${j}: ${s}</div>`).join('');
+                return `<div class="peserta-score-card">
+                            <div class="peserta-name">${i+1}. ${ps.nama || 'Unknown'}</div>
+                            <div class="score-badge">🏆 TOTAL SKOR: ${ps.totalSkor}</div>
+                            <div class="juri-scores">${juriItems}</div>
+                        </div>`;
+            }).join('');
+            document.getElementById('scoreCardList').innerHTML = rankingHtml || '<div>Tidak ada data</div>';
+        }
+        
+        function renderRiwayatAll() {
+            const container = document.getElementById('riwayatAll');
+            if(!container) return;
+            let data = [...penilaianData];
+            const filterPeserta = document.getElementById('filterPesertaRiwayat')?.value;
+            const filterJuri = document.getElementById('filterJuriRiwayat')?.value;
+            if(filterPeserta) data = data.filter(p => p.pesertaId === parseInt(filterPeserta));
+            if(filterJuri) data = data.filter(p => p.juriId === parseInt(filterJuri));
+            if(data.length === 0) { container.innerHTML = '<div class="card-item">📭 Tidak ada data</div>'; return; }
+            let html = '<div class="riwayat-3-col">';
+            data.forEach(pen => {
+                const peserta = pesertaData.find(p => p.id === pen.pesertaId);
+                const juri = juriData.find(j => j.id === pen.juriId);
+                let total = 0, detail = '';
+                if(pen.nilaiPerKriteria && Array.isArray(pen.nilaiPerKriteria)) {
+                    pen.nilaiPerKriteria.forEach(nk => { 
+                        const k = kriteriaData.find(kr => kr.id === nk.kriteriaId); 
+                        total += nk.nilai || 0; 
+                        detail += `<div class="riwayat-score-item"><span>${k?.kode || '?'} ${k?.nama?.substring(0,25) || ''}</span><span>${nk.nilai || 0}</span></div>`; 
+                    });
+                }
+                html += `<div class="riwayat-card"><div class="riwayat-header"><span>📌 ${peserta?.nama || 'Unknown'}</span><span>👨‍⚖️ ${juri?.nik || juri?.nama || 'Unknown'}</span></div>${detail}<div class="riwayat-total">🏆 TOTAL: ${total}</div><small>📅 ${pen.tanggal || '-'}</small></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        window.deleteJuriWrapper = async (id) => { await deleteJuri(id); };
+        window.deletePesertaWrapper = async (id) => { await deletePeserta(id); };
+        window.deleteKriteriaWrapper = async (id) => { await deleteKriteria(id); };
+        window.editKriteriaWrapper = async (id) => {
+            const k = kriteriaData.find(kr => kr.id === id);
+            if(!k) return;
+            const newNama = prompt('Edit Nama Kriteria:', k.nama);
+            if(newNama && newNama !== k.nama) { 
+                k.nama = newNama; 
+                await updateKriteria(k); 
+            }
+            const newBobot = prompt('Edit Bobot Maksimal (1-10):', k.bobot);
+            if(newBobot && parseInt(newBobot) !== k.bobot) {
+                k.bobot = parseInt(newBobot);
+                await updateKriteria(k);
+            }
+        };
+        
+        function login(username) {
+            const upper = username.toUpperCase().trim();
+            // Admin login
+            if(upper === 'NKP' || upper === 'ERW') {
+                currentUser = { username: upper, role: 'admin', juriId: null };
+                return true;
+            }
+            // Juri login menggunakan inisial
+            const juri = juriData.find(j => j.nik && j.nik.toUpperCase() === upper);
+            if(juri) {
+                currentUser = { username: juri.nik, nama: juri.nama, role: 'juri', juriId: juri.id };
+                return true;
+            }
+            return false;
+        }
+        
+        function showApp() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            renderNavbar();
+            renderAllUI();
+            if(currentUser.role === 'juri') {
+                document.getElementById('submitPenilaianBtn').style.display = 'block';
+                document.getElementById('managementPanel').classList.remove('active-panel');
+                document.getElementById('dashboardPanel').classList.remove('active-panel');
+                document.getElementById('formPanel').classList.add('active-panel');
+            } else {
+                document.getElementById('submitPenilaianBtn').style.display = 'none';
+                document.getElementById('managementPanel').classList.remove('active-panel');
+                document.getElementById('formPanel').classList.remove('active-panel');
+                document.getElementById('dashboardPanel').classList.add('active-panel');
+            }
+            const firstNav = document.querySelector('.nav-btn');
+            if(firstNav) firstNav.click();
+        }
+        
+        function renderNavbar() {
+            const container = document.getElementById('navbarContainer');
+            if(currentUser.role === 'admin') {
+                container.innerHTML = `<button class="nav-btn" data-nav="dashboard">📊 DASHBOARD</button><button class="nav-btn" data-nav="form">📝 FORM</button><button class="nav-btn" data-nav="management">⚙️ MANAGEMENT</button><div class="user-section"><span class="user-info">👑 ADMIN ${currentUser.username}</span><button class="logout-icon" id="logoutBtnNav">🚪</button></div>`;
+            } else {
+                container.innerHTML = `<button class="nav-btn" data-nav="form">📝 FORM</button><div class="user-section"><span class="user-info">👨‍⚖️ JURI: ${currentUser.nama || currentUser.username} (${currentUser.username})</span><button class="logout-icon" id="logoutBtnNav">🚪</button></div>`;
+            }
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+                document.getElementById(`${btn.dataset.nav}Panel`).classList.add('active-panel');
+                if(btn.dataset.nav === 'form') { renderFormKriteriaNilai(); renderDropdownPeserta(); }
+                if(btn.dataset.nav === 'dashboard') renderDashboard();
+                if(btn.dataset.nav === 'management') renderKriteriaMgmt();
+            }));
+            document.getElementById('logoutBtnNav')?.addEventListener('click', () => { currentUser=null; document.getElementById('loginContainer').style.display='flex'; document.getElementById('appContent').style.display='none'; });
+        }
+        
+        // EVENT LISTENERS
+        document.getElementById('loginBtn')?.addEventListener('click', async () => {
+            const loadingDiv = document.getElementById('loginLoading');
+            loadingDiv.style.display = 'block';
+            document.getElementById('loginError').innerHTML = '';
+            const success = await initSupabase();
+            if (!success) { loadingDiv.style.display = 'none'; return; }
+            const username = document.getElementById('loginUsername').value;
+            if(login(username)) { showApp(); } 
+            else { document.getElementById('loginError').innerHTML = 'Inisial tidak ditemukan! Hubungi MSTD'; }
+            loadingDiv.style.display = 'none';
+        });
+        
+        document.getElementById('loginUsername')?.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+        
+        document.getElementById('addJuriBtn')?.addEventListener('click', async () => {
+            const inisial = document.getElementById('juriInisial').value.trim();
+            const nama = document.getElementById('juriName').value.trim();
+            if(!inisial) { showToast('Inisial wajib diisi!', true); return; }
+            if(!nama) { showToast('Nama juri wajib diisi!', true); return; }
+            if(juriData.some(j => j.nik === inisial.toUpperCase())) {
+                showToast('Inisial sudah terdaftar!', true);
+                return;
+            }
+            await addJuri(inisial, nama);
+            document.getElementById('juriInisial').value = '';
+            document.getElementById('juriName').value = '';
+        });
+        
+        document.getElementById('addPesertaBtn')?.addEventListener('click', async () => {
+            const nama = document.getElementById('pesertaName').value.trim();
+            const judul = document.getElementById('judulConim').value.trim();
+            const linkppt = document.getElementById('linkppt').value.trim();
+            if(!nama) { showToast('Nama peserta wajib diisi!', true); return; }
+            if(!judul) { showToast('Judul improvement wajib diisi!', true); return; }
+            await addPeserta(nama, judul, linkppt || null);
+            document.getElementById('pesertaName').value = '';
+            document.getElementById('judulConim').value = '';
+            document.getElementById('linkppt').value = '';
+        });
+        
+        document.getElementById('addKriteriaBtn')?.addEventListener('click', async () => {
+            const nama = document.getElementById('kriteriaName').value.trim();
+            if(!nama) { showToast('Nama kriteria wajib diisi!', true); return; }
+            await addKriteria({
+                kode: document.getElementById('kriteriaKode').value.trim(),
+                nama: nama,
+                descKurang: document.getElementById('descKurang').value,
+                descCukup: document.getElementById('descCukup').value,
+                descBaik: document.getElementById('descBaik').value,
+                descExcellent: document.getElementById('descExcellent').value,
+                bobot: parseInt(document.getElementById('kriteriaBobot').value) || 10,
+                urutan: parseInt(document.getElementById('kriteriaUrutan').value) || kriteriaData.length + 1
+            });
+            document.getElementById('kriteriaName').value = '';
+            document.getElementById('kriteriaKode').value = '';
+            document.getElementById('descKurang').value = '';
+            document.getElementById('descCukup').value = '';
+            document.getElementById('descBaik').value = '';
+            document.getElementById('descExcellent').value = '';
+            document.getElementById('kriteriaBobot').value = '10';
+            document.getElementById('kriteriaUrutan').value = (kriteriaData.length + 1).toString();
+        });
+        
+        document.getElementById('resetDefaultBtn')?.addEventListener('click', async () => { 
+            if(confirm('⚠️ RESET KE DEFAULT KRITERIA? Semua kriteria custom akan hilang!')) {
+                await resetDefaultKriteria();
+            }
+        });
+        
+        document.getElementById('submitPenilaianBtn')?.addEventListener('click', handleSubmitPenilaian);
+        
+        document.getElementById('dropdownPeserta')?.addEventListener('change', (e) => {
+            const pid = e.target.value;
+            if(pid) {
+                const p = pesertaData.find(p => p.id === parseInt(pid));
+                if(p) {
+                    const pptButton = p.linkppt ? `<button class="btn-ppt" onclick="window.open('${p.linkppt}', '_blank')">📽️ LIHAT MATERI PRESENTASI</button>` : '<div class="ppt-warning">⚠️ Belum ada link materi yang diupload</div>';
+                    document.getElementById('infoPeserta').innerHTML = `<div style="font-weight:bold; margin-bottom:0.5rem;">🏷️ ${p.nama || 'Unknown'}</div><div>💡 JUDUL PRESENTASI:<br>${p.judulConim || '-'}</div>${pptButton}`;
+                    document.getElementById('infoPeserta').style.display = 'block';
+                }
+            } else {
+                document.getElementById('infoPeserta').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('filterPesertaRiwayat')?.addEventListener('change', () => renderRiwayatAll());
+        document.getElementById('filterJuriRiwayat')?.addEventListener('change', () => renderRiwayatAll());
+        document.getElementById('resetFilterBtn')?.addEventListener('click', () => { 
+            document.getElementById('filterPesertaRiwayat').value = ''; 
+            document.getElementById('filterJuriRiwayat').value = ''; 
+            renderRiwayatAll(); 
+        });
+        
+        // Set default active for first dashboard selector (not used but kept for compatibility)
+        document.querySelectorAll('#dashboardStreamSelector .stream-radio')[0]?.classList.add('active');
+    })();
+</script>
+</body>
+</html>
